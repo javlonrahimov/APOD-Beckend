@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -22,7 +23,7 @@ type ApodModel struct {
 	DB *sql.DB
 }
 
-func (m ApodModel) Insert(apod * Apod) error {
+func (a ApodModel) Insert(apod *Apod) error {
 	query := `
 	INSERT INTO apods (title, explanation, date, media_type, url, hd_url)
 	VALUES ($1, $2, $3, $4, $5, $6)
@@ -30,14 +31,13 @@ func (m ApodModel) Insert(apod * Apod) error {
 
 	args := []interface{}{apod.Title, apod.Explanation, apod.Date, apod.MediaType, apod.Url, apod.HdUrl}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	return m.DB.QueryRowContext(ctx ,query, args...).Scan(&apod.ID, &apod.Version)
+	return a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.ID, &apod.Version)
 }
 
-
-func (m ApodModel) GetById(id int64) (*Apod, error) {
+func (a ApodModel) GetById(id int64) (*Apod, error) {
 
 	if id > 0 {
 		return nil, ErrRecordNotFound
@@ -49,10 +49,10 @@ func (m ApodModel) GetById(id int64) (*Apod, error) {
 
 	var apod Apod
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+	err := a.DB.QueryRowContext(ctx, query, id).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -75,7 +75,7 @@ func (m ApodModel) GetById(id int64) (*Apod, error) {
 	return &apod, nil
 }
 
-func (m ApodModel) GetByDate(date string) (*Apod, error) {
+func (a ApodModel) GetByDate(date string) (*Apod, error) {
 
 	if date == "" {
 		return nil, ErrRecordNotFound
@@ -87,10 +87,10 @@ func (m ApodModel) GetByDate(date string) (*Apod, error) {
 
 	var apod Apod
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, date).Scan(
+	err := a.DB.QueryRowContext(ctx, query, date).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -113,7 +113,7 @@ func (m ApodModel) GetByDate(date string) (*Apod, error) {
 	return &apod, nil
 }
 
-func (m ApodModel) Update(apod * Apod) error {
+func (a ApodModel) Update(apod *Apod) error {
 
 	query := `
 	UPDATE apods
@@ -132,10 +132,10 @@ func (m ApodModel) Update(apod * Apod) error {
 		apod.Version,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&apod.Version)
+	err := a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -156,7 +156,7 @@ func (m ApodModel) Delete(id int64) error {
 	DELETE FROM apods
 	WHERE id = $1`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	result, err := m.DB.ExecContext(ctx, query, id)
@@ -175,3 +175,55 @@ func (m ApodModel) Delete(id int64) error {
 
 	return nil
 }
+
+func (a ApodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
+		FROM movies
+		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		ORDER BY %s %s, id ASC
+		LIMIT $2 OFFSET $3`, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{title, filters.limit(), filters.offset()}
+
+	rows, err := a.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	apods := []*Apod{}
+
+	for rows.Next() {
+		var apod Apod
+
+		err := rows.Scan(
+			&totalRecords,
+			&apod.ID,
+			&apod.Title,
+			&apod.Explanation,
+			&apod.MediaType,
+			&apod.Date,
+			&apod.Url,
+			&apod.HdUrl,
+			&apod.Version,
+		)
+
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		apods = append(apods, &apod)
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return apods, metadata, nil
+}
+
+//TODO: write validation
