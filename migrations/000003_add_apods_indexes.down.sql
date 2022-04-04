@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS apods_title_idx;

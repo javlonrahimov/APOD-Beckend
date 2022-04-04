@@ -46,6 +46,13 @@ db/migrations/up: confirm
 	migrate -path ./migrations -database ${APOD_DB_DSN}?sslmode=disable up
 
 
+## db/migrations/force: force migrations to version
+.PHONY: db/migrations/force
+db/migrations/force: confirm
+	@echo 'Forcing migrations to ${version} version'
+	migrate -path ./migrations -database ${APOD_DB_DSN}?sslmode=disable force ${version}
+
+
 # ==================================================================================== #
 # BUILD
 # ==================================================================================== #
