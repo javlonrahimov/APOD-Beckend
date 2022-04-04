@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"javlonrahimov/apod/internal/validator"
@@ -16,18 +17,18 @@ var (
 var AnonymousUser = &User{}
 
 type User struct {
-	ID int64 `json:"id"`
+	ID        int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
-	Name string `json:"name"`
-	Email string `json:"email"`
-	Password password `json:"-"`
-	Activated bool `json:"activated"`
-	Version int `json:"version"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  password  `json:"-"`
+	Activated bool      `json:"activated"`
+	Version   int       `json:"version"`
 }
 
 type password struct {
 	plaintext *string
-	hash []byte
+	hash      []byte
 }
 
 type UserModel struct {
@@ -53,7 +54,7 @@ func (p *password) Set(plaintextPassword string) error {
 func (p *password) Matches(plaintextPassword string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plaintextPassword))
 	if err != nil {
-		switch{
+		switch {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
 			return false, nil
 		default:
@@ -90,5 +91,25 @@ func ValidateUser(v *validator.Validator, user *User) {
 
 func (u UserModel) Insert(user *User) error {
 	query := `
-	INSERT INTO users `
+	INSERT INTO users (name, email, password_hash, activated)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id, created_at, version`
+
+	args := []interface{}{user.Name, user.Email, user.Password.hash, user.Activated}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
