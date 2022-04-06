@@ -122,7 +122,7 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 
 	var user User
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	err := u.DB.QueryRowContext(ctx, query, email).Scan(
@@ -167,7 +167,7 @@ func (u UserModel) Update(user *User) error {
 
 	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
-		switch{
+		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
 			return ErrDuplicateEmail
 		case errors.Is(err, sql.ErrNoRows):
