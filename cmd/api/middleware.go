@@ -2,7 +2,6 @@ package main
 
 import (
 	"javlonrahimov/apod/internal/data"
-	// "javlonrahimov/apod/internal/validator"
 	"net/http"
 	"strings"
 )
@@ -21,11 +20,6 @@ func (app *application) validateUser(next http.Handler) http.Handler {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
-
-		// token := headerParts[1]
-		// v := validator.New()
-
 		next.ServeHTTP(w, r)
-
 	})
 }
