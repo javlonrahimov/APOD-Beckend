@@ -13,6 +13,7 @@ var (
 type Models struct {
 	Apods ApodModel
 	Users UserModel
+	Permissions PermissionModel
 }
 
 func NewModels(db *sql.DB) Models {
