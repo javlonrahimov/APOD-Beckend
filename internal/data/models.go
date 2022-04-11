@@ -8,6 +8,7 @@ import (
 var (
 	ErrRecordNotFound = errors.New("record not found")
 	ErrEditConflict   = errors.New("edit conflict")
+	ErrOtpExpired     = errors.New("error otp expired")
 )
 
 type Models struct {
