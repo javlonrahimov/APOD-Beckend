@@ -5,25 +5,26 @@ import (
 	"javlonrahimov/apod/internal/data"
 	"javlonrahimov/apod/internal/validator"
 	"net/http"
+	"time"
 )
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
-		Name string `json:"name"`
-		Email string `json:"email"`
+		Name     string `json:"name"`
+		Email    string `json:"email"`
 		Password string `json:"assword"`
 	}
 
 	err := app.readJSON(w, r, &input)
-		if err != nil {
-			app.badRequestResponse(w, r, err)
-			return
-		}
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
 	user := &data.User{
-		Name: input.Name,
-		Email: input.Email,
+		Name:      input.Name,
+		Email:     input.Email,
 		Activated: false,
 	}
 	err = user.Password.Set(input.Password)
@@ -57,5 +58,24 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
+	otp, err := app.models.Otps.New(user.ID, 10 * time.Minute)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.background(func() {
+		data := []byte(otp.Plaintext)
+
+		err = app.mailer.Send([]string{user.Email}, data)
+		if err != nil {
+			app.logger.PrintError(err, nil)
+		}
+	})
+
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
 }

@@ -11,7 +11,7 @@ import (
 type Permissions []string
 
 var (
-	ApodsRead = "apods:read"
+	ApodsRead  = "apods:read"
 	ApodsWrite = "apods:write"
 )
 
