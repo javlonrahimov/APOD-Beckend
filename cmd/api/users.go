@@ -143,6 +143,28 @@ func (app *application) verifyUser(w http.ResponseWriter, r *http.Request) {
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
 	}
 
+	user.Activated = true
+	app.models.Users.Update(user)
+
+	accessToken, err := app.models.Tokens.New(user.ID, data.AccessTokenExpire, data.ScopeAccess)
+	if err != nil {
+		return 
+	}
+	refreshToken, err := app.models.Tokens.New(user.ID, data.RefreshTokenExpire, data.ScopeRefresh)
+
+	tokenPair := struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}{
+		AccessToken:  accessToken.Plaintext,
+		RefreshToken: refreshToken.Plaintext,
+	}
+
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user, "tokens": tokenPair}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

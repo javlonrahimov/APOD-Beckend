@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"javlonrahimov/apod/internal/data"
+	"javlonrahimov/apod/internal/validator"
 	"net/http"
 	"strings"
 )
@@ -20,6 +22,26 @@ func (app *application) validateUser(next http.Handler) http.Handler {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
+
+		token := headerParts[1]
+		v := validator.New()
+
+		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		user, err := app.models.Users.GetForToken(data.ScopeAccess, token)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.invalidAuthenticationTokenResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+		r = app.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
 }
