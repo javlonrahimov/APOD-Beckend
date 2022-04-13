@@ -147,8 +147,6 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-
-
 func (u UserModel) Update(user *User) error {
 	query := `
 	UPDATE users

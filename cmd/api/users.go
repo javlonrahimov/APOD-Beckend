@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"javlonrahimov/apod/internal/data"
 	"javlonrahimov/apod/internal/validator"
 	"net/http"
@@ -15,7 +16,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	var input struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
-		Password string `json:"assword"`
+		Password string `json:"password"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -67,9 +68,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	app.background(func() {
-		data := []byte(otp.Plaintext)
+		// data := []byte(otp.Plaintext)
 
-		err = app.mailer.Send([]string{user.Email}, data)
+		 _, err := http.Get(fmt.Sprintf(
+			"https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%v",
+		 app.config.telegram.botToken, app.config.telegram.channelId, otp.Plaintext,
+		))
+
+		// err = app.mailer.Send([]string{user.Email}, data)
 		if err != nil {
 			app.logger.PrintError(err, nil)
 		}
@@ -82,7 +88,78 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 }
 
-func (app *application) verifyUser(w http.ResponseWriter, r *http.Request) {
+func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		UserEmail string `json:"email"`
+		Password string  `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateEmail(v, input.UserEmail); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if data.ValidatePasswordPlaintext(v, input.Password); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	user, err := app.models.Users.GetByEmail(input.UserEmail)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("email", "no user found with this email")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if !user.Activated {
+		app.unactivatedAccountResponse(w, r)
+		return
+	}
+
+	match, err := user.Password.Matches(input.Password)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	if !match {
+		app.invalidCredentialsResponse(w, r)
+		return
+	}
+
+	accessToken, err := app.models.Tokens.New(user.ID, data.AccessTokenExpire, data.ScopeAccess)
+	if err != nil {
+			return
+		}
+	refreshToken, err := app.models.Tokens.New(user.ID, data.RefreshTokenExpire, data.ScopeRefresh)
+
+	tokenPair := struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}{
+		AccessToken:  accessToken.Plaintext,
+		RefreshToken: refreshToken.Plaintext,
+	}
+
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user, "tokens": tokenPair}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) verifyUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		UserEmail    string `json:"email"`
@@ -151,10 +228,14 @@ func (app *application) verifyUser(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, err := app.models.Tokens.New(user.ID, data.AccessTokenExpire, data.ScopeAccess)
 	if err != nil {
-		return 
+		app.serverErrorResponse(w, r, err)
+		return
 	}
 	refreshToken, err := app.models.Tokens.New(user.ID, data.RefreshTokenExpire, data.ScopeRefresh)
-
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 	tokenPair := struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`

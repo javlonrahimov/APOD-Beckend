@@ -26,7 +26,7 @@ confirm:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -db-dsn=${APOD_DB_DSN}?sslmode=disable
+	go run ./cmd/api -db-dsn=${APOD_DB_DSN}?sslmode=disable -bot-token=${BOT_TOKEN} -channel-id=${CHANNEL_ID}
 
 ## db/psql: connect to the database using psql
 .PHONY: db/psql

@@ -10,23 +10,22 @@ import (
 	"time"
 )
 
-
 const (
 	ScopeRefresh = "refresh"
-	ScopeAccess = "access"
+	ScopeAccess  = "access"
 )
 
 const (
-	AccessTokenExpire = time.Duration(15*time.Minute)
-	RefreshTokenExpire = time.Duration(30*24*time.Hour)	
+	AccessTokenExpire  = time.Duration(15 * time.Minute)
+	RefreshTokenExpire = time.Duration(30 * 24 * time.Hour)
 )
 
 type Token struct {
-	Plaintext string `json:"token"`
-	Hash []byte `json:"-"`
-	UserId int64 `json:"-"`
-	Expiry time.Time `json:"expiry"`
-	Scope string `json:"-"`
+	Plaintext string    `json:"token"`
+	Hash      []byte    `json:"-"`
+	UserId    int64     `json:"-"`
+	Expiry    time.Time `json:"expiry"`
+	Scope     string    `json:"-"`
 }
 
 type TokenModel struct {
@@ -75,14 +74,18 @@ func (m TokenModel) Insert(token *Token) error {
 	INSERT INTO tokens (hash, user_id, expiry, scope)
 	VALUES ($1, $2, $3, $4)`
 
+	// query := `
+	// INSERT INTO tokens (hash, user_id, expiry, scope) values ($1, $2, $3, $4)
+	// ON CONFLICT (user_id) DO UPDATE SET hash = $1, user_id = $2, expiry = $3, scope = $4)`
+
 	args := []interface{}{token.Hash, token.UserId, token.Expiry, token.Scope}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, args...)
 
-	return err 
+	return err
 }
 
 func (m TokenModel) DeleteAllForUser(scope string, userId int64) error {
@@ -90,7 +93,7 @@ func (m TokenModel) DeleteAllForUser(scope string, userId int64) error {
 	DELETE FROM tokens
 	WHERE scope = $1 AND user_id = $2`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, scope, userId)

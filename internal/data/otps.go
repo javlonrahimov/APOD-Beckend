@@ -87,7 +87,7 @@ func (m OtpModel) Insert(otp *Otp) error {
 
 func (m OtpModel) GetForUser(userId int64) (*Otp, error) {
 	query := `
-	SELECT hash, user_id, expiry
+	SELECT hash, user_id, expiry FROM otps
 	WHERE user_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -108,7 +108,7 @@ func (m OtpModel) GetForUser(userId int64) (*Otp, error) {
 			return nil, err
 		}
 	}
-	if otp.Expiry.After(time.Now()) {
+	if !otp.Expiry.After(time.Now()) {
 		return nil, ErrOtpExpired
 	}
 	return &otp, nil

@@ -15,9 +15,14 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthchekHandler)
 
-	//todo add routes
+
+	
+
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPost,"/v1/users/verify", app.verifyUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/users/login", app.loginUserHandler)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
-	return router
+	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }

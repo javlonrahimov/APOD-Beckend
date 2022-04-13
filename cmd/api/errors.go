@@ -55,6 +55,11 @@ func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *htt
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
+func (app *application) unactivatedAccountResponse(w http.ResponseWriter, r *http.Request) {
+	message := "verify your account first"
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
 func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 	message := "invalid or missing authentication token"

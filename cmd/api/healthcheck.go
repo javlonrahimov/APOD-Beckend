@@ -16,5 +16,5 @@ func (app *application) healthchekHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-	
+
 }

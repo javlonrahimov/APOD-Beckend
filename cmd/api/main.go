@@ -45,6 +45,10 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
+	telegram struct {
+		botToken string
+		channelId string
+	}
 }
 
 type application struct {
@@ -81,6 +85,9 @@ func main() {
 		cfg.cors.trustedOrigins = strings.Fields(val)
 		return nil
 	})
+
+	flag.StringVar(&cfg.telegram.botToken, "bot-token", "", "Bot token for sending otps to channel in debug mode")
+	flag.StringVar(&cfg.telegram.channelId, "channel-id", "", "Channel id for sending otps in debug mode")
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
