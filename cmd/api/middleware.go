@@ -137,13 +137,12 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 	return app.requireAuthenticatedUser(fn)
 }
 
-
 func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, err := app.contextGetUser(r)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
-			return 
+			return
 		}
 		if user.IsAnonymous() {
 			app.authenticationRequiredResponse(w, r)
@@ -160,7 +159,7 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
-			return 
+			return
 		}
 
 		permissions, err := app.models.Permissions.GetAllForUser(user.ID)
@@ -197,7 +196,6 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
 
 func (app *application) metrics(next http.Handler) http.Handler {
 	totalRequestsReceived := expvar.NewInt("total_requests_received")

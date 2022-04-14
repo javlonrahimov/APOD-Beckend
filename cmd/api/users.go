@@ -70,9 +70,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	app.background(func() {
 		// data := []byte(otp.Plaintext)
 
-		 _, err := http.Get(fmt.Sprintf(
+		_, err := http.Get(fmt.Sprintf(
 			"https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%v",
-		 app.config.telegram.botToken, app.config.telegram.channelId, otp.Plaintext,
+			app.config.telegram.botToken, app.config.telegram.channelId, otp.Plaintext,
 		))
 
 		// err = app.mailer.Send([]string{user.Email}, data)
@@ -91,7 +91,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		UserEmail string `json:"email"`
-		Password string  `json:"password"`
+		Password  string `json:"password"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -141,8 +141,8 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 
 	accessToken, err := app.models.Tokens.New(user.ID, data.AccessTokenExpire, data.ScopeAccess)
 	if err != nil {
-			return
-		}
+		return
+	}
 	refreshToken, err := app.models.Tokens.New(user.ID, data.RefreshTokenExpire, data.ScopeRefresh)
 
 	tokenPair := struct {
@@ -236,6 +236,7 @@ func (app *application) verifyUserHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 		return
 	}
+
 	tokenPair := struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
@@ -245,6 +246,12 @@ func (app *application) verifyUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user, "tokens": tokenPair}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.models.Otps.DeleteAllForUser(user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

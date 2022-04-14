@@ -10,7 +10,6 @@ import (
 	"javlonrahimov/apod/internal/jsonlog"
 	"javlonrahimov/apod/internal/mailer"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -46,7 +45,7 @@ type config struct {
 		trustedOrigins []string
 	}
 	telegram struct {
-		botToken string
+		botToken  string
 		channelId string
 	}
 }
@@ -112,17 +111,17 @@ func main() {
 
 	expvar.NewString("version").Set(version)
 
-	expvar.Publish("goroutines", expvar.Func(func() interface{} {
-		return runtime.NumGoroutine()
-	}))
+	// expvar.Publish("goroutines", expvar.Func(func() interface{} {
+	// 	return runtime.NumGoroutine()
+	// }))
 
-	expvar.Publish("database", expvar.Func(func() interface{} {
-		return db.Stats()
-	}))
+	// expvar.Publish("database", expvar.Func(func() interface{} {
+	// 	return db.Stats()
+	// }))
 
-	expvar.Publish("timestamp", expvar.Func(func() interface{} {
-		return time.Now().Unix()
-	}))
+	// expvar.Publish("timestamp", expvar.Func(func() interface{} {
+	// 	return time.Now().Unix()
+	// }))
 
 	app := &application{
 		config: cfg,

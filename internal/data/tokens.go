@@ -65,6 +65,7 @@ func (m TokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, 
 	if err != nil {
 		return nil, err
 	}
+	m.DeleteAllForUser(scope, userId)
 	err = m.Insert(token)
 	return token, err
 }

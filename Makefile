@@ -88,3 +88,9 @@ audit:
 	staticcheck ./...
 	@echo 'Running tests...'
 	go test -race -vet=off ./...
+
+## test: run tests for the code
+.PHONY: test
+test:
+	@echo 'Running tests...'
+	go test ./...
