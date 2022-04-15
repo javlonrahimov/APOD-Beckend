@@ -31,30 +31,39 @@ func (l Level) String() string {
 	}
 }
 
+
 type Logger struct {
 	out      io.Writer
 	minLevel Level
+	isDiscard bool
 	mu       sync.Mutex
 }
 
-func New(out io.Writer, minLevel Level) *Logger {
+func New(out io.Writer, minLevel Level, isDiscard bool) *Logger {
 	return &Logger{
 		out:      out,
 		minLevel: minLevel,
+		isDiscard: isDiscard,
 	}
 }
 
 func (l *Logger) PrintInfo(message string, properties map[string]string) {
-	l.print(LevelInfo, message, properties)
+	if !l.isDiscard {
+		l.print(LevelInfo, message, properties)
+	}
 }
 
 func (l *Logger) PrintError(err error, properties map[string]string) {
-	l.print(LevelError, err.Error(), properties)
+	if !l.isDiscard {
+		l.print(LevelError, err.Error(), properties)
+	}
 }
 
 func (l *Logger) PrintFatal(err error, properties map[string]string) {
-	l.print(LevelFatal, err.Error(), properties)
-	os.Exit(1)
+	if !l.isDiscard {
+		l.print(LevelFatal, err.Error(), properties)
+		os.Exit(1)
+	}
 }
 
 func (l *Logger) print(level Level, message string, properties map[string]string) (int, error) {

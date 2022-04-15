@@ -14,6 +14,22 @@ var mockUser = &data.User{
 	Version:   1,
 }
 
-type UserModel struct {}
 
-func (m *UserModel) Insert()
+type UserModelMock struct {}
+
+
+func (m *UserModelMock) Insert(user *data.User) error {
+	return nil
+}
+
+func (m *UserModelMock) GetByEmail(email string) (*data.User, error) {
+	return nil, nil
+}
+
+func (m *UserModelMock) Update(user *data.User) error {
+	return nil
+}
+
+func (m *UserModelMock) GetForToken(tokenScope, tokenPlaintext string) (*data.User, error) {
+	return nil, nil
+}

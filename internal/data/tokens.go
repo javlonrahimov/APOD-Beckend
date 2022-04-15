@@ -20,6 +20,12 @@ const (
 	RefreshTokenExpire = time.Duration(30 * 24 * time.Hour)
 )
 
+type TokenService interface {
+	New(userId int64, ttl time.Duration, scope string) (*Token, error)
+	Insert(token *Token) error
+	DeleteAllForUser(scope string, userId int64) error
+}
+
 type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`
@@ -28,8 +34,12 @@ type Token struct {
 	Scope     string    `json:"-"`
 }
 
-type TokenModel struct {
-	DB *sql.DB
+type tokenModel struct {
+	db *sql.DB
+}
+
+func NewTokenModel(db *sql.DB) TokenService {
+	return &tokenModel{db: db}
 }
 
 func generateToken(userId int64, ttl time.Duration, scope string) (*Token, error) {
@@ -60,7 +70,7 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long")
 }
 
-func (m TokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, error) {
+func (m tokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, error) {
 	token, err := generateToken(userId, ttl, scope)
 	if err != nil {
 		return nil, err
@@ -70,7 +80,7 @@ func (m TokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, 
 	return token, err
 }
 
-func (m TokenModel) Insert(token *Token) error {
+func (m tokenModel) Insert(token *Token) error {
 	query := `
 	INSERT INTO tokens (hash, user_id, expiry, scope)
 	VALUES ($1, $2, $3, $4)`
@@ -84,12 +94,12 @@ func (m TokenModel) Insert(token *Token) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, args...)
+	_, err := m.db.ExecContext(ctx, query, args...)
 
 	return err
 }
 
-func (m TokenModel) DeleteAllForUser(scope string, userId int64) error {
+func (m tokenModel) DeleteAllForUser(scope string, userId int64) error {
 	query := `
 	DELETE FROM tokens
 	WHERE scope = $1 AND user_id = $2`
@@ -97,7 +107,7 @@ func (m TokenModel) DeleteAllForUser(scope string, userId int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, scope, userId)
+	_, err := m.db.ExecContext(ctx, query, scope, userId)
 
 	return err
 }

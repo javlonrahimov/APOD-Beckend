@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+type ApodService interface {
+		Insert(apod *Apod) error
+		GetById(id int64) (*Apod, error)
+		GetByDate(date string) (*Apod, error)
+		Update(apod *Apod) error
+		Delete(id int64) error
+		GetAll(title string, filters Filters) ([]*Apod, Metadata, error)
+}
+
 type Apod struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
@@ -19,11 +28,16 @@ type Apod struct {
 	Version     int32  `json:"version"`
 }
 
-type ApodModel struct {
-	DB *sql.DB
+type apodModel struct {
+	db *sql.DB
 }
 
-func (a ApodModel) Insert(apod *Apod) error {
+func NewApodModel(db *sql.DB) ApodService {
+	return &apodModel{db: db}
+}
+
+
+func (a *apodModel) Insert(apod *Apod) error {
 	query := `
 	INSERT INTO apods (title, explanation, date, media_type, url, hd_url)
 	VALUES ($1, $2, $3, $4, $5, $6)
@@ -34,10 +48,10 @@ func (a ApodModel) Insert(apod *Apod) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	return a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.ID, &apod.Version)
+	return a.db.QueryRowContext(ctx, query, args...).Scan(&apod.ID, &apod.Version)
 }
 
-func (a ApodModel) GetById(id int64) (*Apod, error) {
+func (a *apodModel) GetById(id int64) (*Apod, error) {
 
 	if id > 0 {
 		return nil, ErrRecordNotFound
@@ -52,7 +66,7 @@ func (a ApodModel) GetById(id int64) (*Apod, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := a.DB.QueryRowContext(ctx, query, id).Scan(
+	err := a.db.QueryRowContext(ctx, query, id).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -75,7 +89,7 @@ func (a ApodModel) GetById(id int64) (*Apod, error) {
 	return &apod, nil
 }
 
-func (a ApodModel) GetByDate(date string) (*Apod, error) {
+func (a *apodModel) GetByDate(date string) (*Apod, error) {
 
 	if date == "" {
 		return nil, ErrRecordNotFound
@@ -90,7 +104,7 @@ func (a ApodModel) GetByDate(date string) (*Apod, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := a.DB.QueryRowContext(ctx, query, date).Scan(
+	err := a.db.QueryRowContext(ctx, query, date).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -113,7 +127,7 @@ func (a ApodModel) GetByDate(date string) (*Apod, error) {
 	return &apod, nil
 }
 
-func (a ApodModel) Update(apod *Apod) error {
+func (a *apodModel) Update(apod *Apod) error {
 
 	query := `
 	UPDATE apods
@@ -135,7 +149,7 @@ func (a ApodModel) Update(apod *Apod) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.Version)
+	err := a.db.QueryRowContext(ctx, query, args...).Scan(&apod.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -147,7 +161,7 @@ func (a ApodModel) Update(apod *Apod) error {
 	return nil
 }
 
-func (m ApodModel) Delete(id int64) error {
+func (m *apodModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
@@ -159,7 +173,7 @@ func (m ApodModel) Delete(id int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	result, err := m.DB.ExecContext(ctx, query, id)
+	result, err := m.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
@@ -176,7 +190,7 @@ func (m ApodModel) Delete(id int64) error {
 	return nil
 }
 
-func (a ApodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, error) {
+func (a *apodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
 		FROM movies
@@ -189,7 +203,7 @@ func (a ApodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, err
 
 	args := []interface{}{title, filters.limit(), filters.offset()}
 
-	rows, err := a.DB.QueryContext(ctx, query, args...)
+	rows, err := a.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
