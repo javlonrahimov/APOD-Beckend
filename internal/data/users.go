@@ -15,6 +15,13 @@ var (
 	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
+type UserService interface {
+	Insert(user *User) error
+	GetByEmail(email string) (*User, error)
+	Update(user *User) error
+	GetForToken(tokenScope, tokenPlaintext string) (*User, error)
+}
+
 var AnonymousUser = &User{}
 
 type User struct {
@@ -32,8 +39,12 @@ type password struct {
 	hash      []byte
 }
 
-type UserModel struct {
-	DB *sql.DB
+type userModel struct {
+	db *sql.DB
+}
+
+func NewUserModel(db *sql.DB) UserService {
+	return &userModel{db: db}
 }
 
 func (u *User) IsAnonymous() bool {
@@ -90,7 +101,7 @@ func ValidateUser(v *validator.Validator, user *User) {
 	}
 }
 
-func (u UserModel) Insert(user *User) error {
+func (u userModel) Insert(user *User) error {
 	query := `
 	INSERT INTO users (name, email, password_hash, activated)
 	VALUES ($1, $2, $3, $4)
@@ -101,7 +112,7 @@ func (u UserModel) Insert(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	err := u.db.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 
 	if err != nil {
 		switch {
@@ -115,7 +126,7 @@ func (u UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (u UserModel) GetByEmail(email string) (*User, error) {
+func (u userModel) GetByEmail(email string) (*User, error) {
 	query := `
 	SELECT id, created_at, name, email, password_hash, activated, version
 	FROM users
@@ -126,7 +137,7 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := u.DB.QueryRowContext(ctx, query, email).Scan(
+	err := u.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -147,7 +158,7 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (u UserModel) Update(user *User) error {
+func (u userModel) Update(user *User) error {
 	query := `
 	UPDATE users
 	SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
@@ -166,7 +177,7 @@ func (u UserModel) Update(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	err := u.db.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -181,7 +192,7 @@ func (u UserModel) Update(user *User) error {
 	return nil
 }
 
-func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
+func (m userModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 	query := `
 	SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.version
@@ -195,7 +206,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	var user User
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+	err := m.db.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,

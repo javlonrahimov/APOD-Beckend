@@ -12,19 +12,19 @@ var (
 )
 
 type Models struct {
-	Apods       ApodModel
-	Users       UserModel
-	Permissions PermissionModel
-	Otps        OtpModel
-	Tokens      TokenModel
+	Apods       ApodService
+	Users       UserService
+	Permissions PermissonService
+	Otps        OtpService
+	Tokens      TokenService
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Apods:       ApodModel{DB: db},
-		Users:       UserModel{DB: db},
-		Permissions: PermissionModel{DB: db},
-		Otps:        OtpModel{DB: db},
-		Tokens:      TokenModel{DB: db},
+		Apods:       NewApodModel(db),
+		Users:       NewUserModel(db),
+		Permissions: NewPermissonModel(db),
+		Otps:        NewOtpModel(db),
+		Tokens:      NewTokenModel(db),
 	}
 }
