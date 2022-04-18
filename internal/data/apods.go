@@ -9,12 +9,12 @@ import (
 )
 
 type ApodService interface {
-		Insert(apod *Apod) error
-		GetById(id int64) (*Apod, error)
-		GetByDate(date string) (*Apod, error)
-		Update(apod *Apod) error
-		Delete(id int64) error
-		GetAll(title string, filters Filters) ([]*Apod, Metadata, error)
+	Insert(apod *Apod) error
+	GetById(id int64) (*Apod, error)
+	GetByDate(date string) (*Apod, error)
+	Update(apod *Apod) error
+	Delete(id int64) error
+	GetAll(title string, filters Filters) ([]*Apod, Metadata, error)
 }
 
 type Apod struct {
@@ -35,7 +35,6 @@ type apodModel struct {
 func NewApodModel(db *sql.DB) ApodService {
 	return &apodModel{db: db}
 }
-
 
 func (a *apodModel) Insert(apod *Apod) error {
 	query := `
@@ -196,12 +195,12 @@ func (a *apodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, er
 		FROM movies
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		ORDER BY %s %s, id ASC
-		LIMIT $2 OFFSET $3`, filters.sortColumn(), filters.sortDirection())
+		LIMIT $2 OFFSET $3`, filters.SortColumn(), filters.SortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []interface{}{title, filters.limit(), filters.offset()}
+	args := []interface{}{title, filters.Limit(), filters.Offset()}
 
 	rows, err := a.db.QueryContext(ctx, query, args...)
 	if err != nil {

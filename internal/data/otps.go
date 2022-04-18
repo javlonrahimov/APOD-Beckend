@@ -36,7 +36,7 @@ func NewOtpModel(db *sql.DB) OtpService {
 	return &otpModel{db: db}
 }
 
-func generateOtp(userId int64, ttl time.Duration) (*Otp, error) {
+func GenerateOtp(userId int64, ttl time.Duration) (*Otp, error) {
 
 	otp := &Otp{
 		UserId: userId,
@@ -73,7 +73,7 @@ func ValidateOtpPlaintext(v *validator.Validator, otpPlaintext string) {
 }
 
 func (m otpModel) New(userId int64, ttl time.Duration) (*Otp, error) {
-	otp, err := generateOtp(userId, ttl)
+	otp, err := GenerateOtp(userId, ttl)
 	if err != nil {
 		return nil, err
 	}

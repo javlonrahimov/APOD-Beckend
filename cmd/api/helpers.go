@@ -27,9 +27,14 @@ func (app *application) readIdParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, code int, data interface{}, headers http.Header) error {
 
-	js, err := json.MarshalIndent(data, "", "\t")
+	js, err := json.MarshalIndent(
+		envelope{
+			"code":       code,
+			"data":       data,
+			"statusCode": status,
+		}, "", "\t")
 	if err != nil {
 		return err
 	}
@@ -94,7 +99,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 
 func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
 	message := "unable to update the record due to an edit conflict, please try again"
-	app.errorResponse(w, r, http.StatusConflict, message)
+	app.errorResponse(w, r, http.StatusConflict, ErrEditConflict, message)
 }
 
 func (app *application) readString(qs url.Values, key string, defaultValue string) string {

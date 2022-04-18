@@ -81,7 +81,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 	})
 
-	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user}, nil)
+	err = app.writeJSON(w, http.StatusAccepted, 0, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -125,7 +125,7 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !user.Activated {
-		app.unactivatedAccountResponse(w, r)
+		app.inactiveAccountResponse(w, r)
 		return
 	}
 
@@ -153,7 +153,7 @@ func (app *application) loginUserHandler(w http.ResponseWriter, r *http.Request)
 		RefreshToken: refreshToken.Plaintext,
 	}
 
-	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user, "tokens": tokenPair}, nil)
+	err = app.writeJSON(w, http.StatusAccepted, ErrCodeOk, envelope{"user": user, "tokens": tokenPair}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -245,7 +245,7 @@ func (app *application) verifyUserHandler(w http.ResponseWriter, r *http.Request
 		RefreshToken: refreshToken.Plaintext,
 	}
 
-	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user, "tokens": tokenPair}, nil)
+	err = app.writeJSON(w, http.StatusAccepted, 0, envelope{"user": user, "tokens": tokenPair}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

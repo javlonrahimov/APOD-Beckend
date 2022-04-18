@@ -31,18 +31,17 @@ func (l Level) String() string {
 	}
 }
 
-
 type Logger struct {
-	out      io.Writer
-	minLevel Level
+	out       io.Writer
+	minLevel  Level
 	isDiscard bool
-	mu       sync.Mutex
+	mu        sync.Mutex
 }
 
 func New(out io.Writer, minLevel Level, isDiscard bool) *Logger {
 	return &Logger{
-		out:      out,
-		minLevel: minLevel,
+		out:       out,
+		minLevel:  minLevel,
 		isDiscard: isDiscard,
 	}
 }

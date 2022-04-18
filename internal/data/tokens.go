@@ -42,7 +42,7 @@ func NewTokenModel(db *sql.DB) TokenService {
 	return &tokenModel{db: db}
 }
 
-func generateToken(userId int64, ttl time.Duration, scope string) (*Token, error) {
+func GenerateToken(userId int64, ttl time.Duration, scope string) (*Token, error) {
 
 	token := &Token{
 		UserId: userId,
@@ -71,7 +71,7 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 }
 
 func (m tokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, error) {
-	token, err := generateToken(userId, ttl, scope)
+	token, err := GenerateToken(userId, ttl, scope)
 	if err != nil {
 		return nil, err
 	}
