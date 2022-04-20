@@ -149,12 +149,12 @@ func TestUserVerify(t *testing.T) {
 	app := newTestApplication()
 
 	tests := []struct {
-		name string
-		userEmail string
-		userOtp string
+		name       string
+		userEmail  string
+		userOtp    string
 		wantStatus int
-		wantCode int
-	} {
+		wantCode   int
+	}{
 		{
 			name:       "Valid verify",
 			userEmail:  "user1@gmail.com",

@@ -49,7 +49,6 @@ func GenerateOtp(userId int64, ttl time.Duration, value *string) (*Otp, error) {
 		otp.Plaintext = *value
 	}
 
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(otp.Plaintext), 12)
 	if err != nil {
 		return nil, err
