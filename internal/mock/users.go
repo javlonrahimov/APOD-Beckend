@@ -10,6 +10,16 @@ var users = make([]data.User, 0)
 type userModelMock struct{}
 
 func NewUsersMock() data.UserService {
+	user := data.User{
+		ID:        1,
+		CreatedAt: time.Now(),
+		Name:      "user1",
+		Email:     "user1@gmail.com",
+		Activated: true,
+		Version:   1,
+	}
+	user.Password.Set("password")
+	users = append(users, user)
 	return &userModelMock{}
 }
 

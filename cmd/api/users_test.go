@@ -19,10 +19,36 @@ func TestUserRegistration(t *testing.T) {
 		wantStatus   int
 		wantCode     int
 	}{
-		{"Valid registration", "Javlon", "javlon@gmail.com", "this_is_a_password", http.StatusAccepted, ErrCodeOk},
-		{"Invalid email", "Javlon", "javlongmail", "this_is_a_password", http.StatusUnprocessableEntity, ErrCodeValidation},
-		{"Invalid name", "", "javlon@gmail.com", "this_is_a_password",http.StatusUnprocessableEntity, ErrCodeValidation},
-		{"Invalid password", "Javlon", "javlon@gmail.com", "1234", http.StatusUnprocessableEntity, ErrCodeValidation},
+		{
+			name:         "Valid registration",
+			userName:     "Javlon",
+			userEmail:    "javlon@gmail.com",
+			userPassword: "this_is_a_password",
+			wantStatus:   http.StatusAccepted,
+			wantCode:     ErrCodeOk,
+		},
+		{
+			name:         "Invalid email",
+			userName:     "Javlon",
+			userEmail:    "javlongmail",
+			userPassword: "this_is_a_password",
+			wantStatus:   http.StatusUnprocessableEntity,
+			wantCode:     ErrCodeValidation},
+		{
+			name:         "Invalid name",
+			userName:     "",
+			userEmail:    "javlon@gmail.com",
+			userPassword: "this_is_a_password",
+			wantStatus:   http.StatusUnprocessableEntity,
+			wantCode:     ErrCodeValidation,
+		},
+		{
+			name:         "Invalid password",
+			userName:     "Javlon",
+			userEmail:    "javlon@gmail.com",
+			userPassword: "1234",
+			wantStatus:   http.StatusUnprocessableEntity,
+			wantCode:     ErrCodeValidation},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,6 +62,71 @@ func TestUserRegistration(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(app.registerUserHandler)
+			handler.ServeHTTP(rr, req)
+
+			if status := rr.Code; status != tt.wantStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v",
+					status, tt.wantStatus)
+			}
+
+			var m map[string]int
+			json.Unmarshal(rr.Body.Bytes(), &m)
+
+			if m["code"] != tt.wantCode {
+				t.Errorf("handler returned wrogn code: got %v want %v",
+					m["code"], tt.wantCode)
+			}
+		})
+	}
+}
+
+func TestUserLogin(t *testing.T) {
+
+	app := newTestApplication()
+
+	tests := []struct {
+		name         string
+		userEmail    string
+		userPassword string
+		wantStatus   int
+		wantCode     int
+	}{
+		{
+			name:         "Valid Login",
+			userEmail:    "user1@gmail.com",
+			userPassword: "password",
+			wantStatus:   http.StatusAccepted,
+			wantCode:     ErrCodeOk,
+		},
+		{
+			name:         "Not found email",
+			userEmail:    "user@gmail.com",
+			userPassword: "password",
+			wantStatus:   http.StatusUnprocessableEntity,
+			wantCode:     ErrCodeValidation,
+		},
+		{
+			name:         "Incorrect Password",
+			userEmail:    "user1@gmail.com",
+			userPassword: "pasword",
+			wantStatus:   http.StatusUnprocessableEntity,
+			wantCode:     ErrCodeValidation,
+		},
+	}
+
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+
+			var jsonStr = []byte(fmt.Sprintf(`{"email":"%s","password":"%s"}`, tt.userEmail, tt.userPassword))
+
+			req, err := http.NewRequest("POST", "http:/localhost:4000/v1/users/login", bytes.NewBuffer(jsonStr))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(app.loginUserHandler)
 			handler.ServeHTTP(rr, req)
 
 			if status := rr.Code; status != tt.wantStatus {
