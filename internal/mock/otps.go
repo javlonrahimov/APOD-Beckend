@@ -3,26 +3,40 @@ package mock
 import (
 	"javlonrahimov/apod/internal/data"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
+
+var mockOtp string
 
 var otps = make([]data.Otp, 10)
 
 type otpModelMock struct{}
 
 func NewOtpsMock() data.OtpService {
+	otp := data.Otp{
+		UserId: 1,
+		Expiry: time.Now().Add(15 * time.Minute),
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(otp.Plaintext), 12)
+	if err != nil {
+		return nil
+	}
+
+	otp.Hash = hash
+	otps = append(otps, otp)
 	return &otpModelMock{}
 }
 
 func (m otpModelMock) New(userId int64, ttl time.Duration) (*data.Otp, error) {
-	otp, err := data.GenerateOtp(userId, ttl)
+	mockOtp = "123456"
+	otp, err := data.GenerateOtp(userId, ttl, &mockOtp)
 	if err != nil {
 		return nil, err
 	}
 	_ = m.DeleteAllForUser(userId)
 	err = m.Insert(otp)
 	return otp, err
-
-	return nil, nil
 }
 
 func (m otpModelMock) Insert(otp *data.Otp) error {

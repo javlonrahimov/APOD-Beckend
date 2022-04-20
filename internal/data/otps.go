@@ -36,14 +36,19 @@ func NewOtpModel(db *sql.DB) OtpService {
 	return &otpModel{db: db}
 }
 
-func GenerateOtp(userId int64, ttl time.Duration) (*Otp, error) {
+func GenerateOtp(userId int64, ttl time.Duration, value *string) (*Otp, error) {
 
 	otp := &Otp{
 		UserId: userId,
 		Expiry: time.Now().Add(ttl),
 	}
 
-	otp.Plaintext = encodeToString(6)
+	if value == nil {
+		otp.Plaintext = encodeToString(6)
+	} else {
+		otp.Plaintext = *value
+	}
+
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(otp.Plaintext), 12)
 	if err != nil {
@@ -73,7 +78,7 @@ func ValidateOtpPlaintext(v *validator.Validator, otpPlaintext string) {
 }
 
 func (m otpModel) New(userId int64, ttl time.Duration) (*Otp, error) {
-	otp, err := GenerateOtp(userId, ttl)
+	otp, err := GenerateOtp(userId, ttl, nil)
 	if err != nil {
 		return nil, err
 	}

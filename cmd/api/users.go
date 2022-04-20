@@ -200,7 +200,7 @@ func (app *application) verifyUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("otp", "incarrect otp")
+			v.AddError("otp", "incorrect otp")
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrOtpExpired):
 			v.AddError("otp", "otp expired")

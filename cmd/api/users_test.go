@@ -144,3 +144,67 @@ func TestUserLogin(t *testing.T) {
 		})
 	}
 }
+
+func TestUserVerify(t *testing.T) {
+	app := newTestApplication()
+
+	tests := []struct {
+		name string
+		userEmail string
+		userOtp string
+		wantStatus int
+		wantCode int
+	} {
+		{
+			name:       "Valid verify",
+			userEmail:  "user1@gmail.com",
+			userOtp:    "123456",
+			wantStatus: http.StatusAccepted,
+			wantCode:   0,
+		},
+		{
+			name:       "Invalid email",
+			userEmail:  "user@gmail.com",
+			userOtp:    "123456",
+			wantStatus: http.StatusUnprocessableEntity,
+			wantCode:   ErrCodeValidation,
+		},
+		{
+			name:       "Invalid otp",
+			userEmail:  "user1@gmail.com",
+			userOtp:    "123451",
+			wantStatus: http.StatusUnprocessableEntity,
+			wantCode:   ErrCodeValidation,
+		},
+	}
+
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+
+			var jsonStr = []byte(fmt.Sprintf(`{"email":"%s","otp":"%s"}`, tt.userEmail, tt.userOtp))
+
+			req, err := http.NewRequest("POST", "http:/localhost:4000/v1/users/verify", bytes.NewBuffer(jsonStr))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(app.verifyUserHandler)
+			handler.ServeHTTP(rr, req)
+
+			if status := rr.Code; status != tt.wantStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v",
+					status, tt.wantStatus)
+			}
+
+			var m map[string]int
+			json.Unmarshal(rr.Body.Bytes(), &m)
+
+			if m["code"] != tt.wantCode {
+				t.Errorf("handler returned unexpected body: got %v want %v",
+					m["code"], tt.wantCode)
+			}
+		})
+	}
+}
