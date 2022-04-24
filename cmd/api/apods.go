@@ -6,7 +6,21 @@ import (
 	"net/http"
 )
 
-func (app *application) getAllHandler(w http.ResponseWriter, r *http.Request) {
+type ApodHandler interface {
+	GetAll(w http.ResponseWriter, r *http.Request)
+	GetById(w http.ResponseWriter, r *http.Request)
+	GetByDate(w http.ResponseWriter, r *http.Request)
+}
+
+type apodApi struct {
+	app *application
+}
+
+func NewApodApi(app *application) ApodHandler {
+	return &apodApi{app: app,}
+}
+
+func (a *apodApi) GetAll(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Q string
 		data.Filters
@@ -15,32 +29,32 @@ func (app *application) getAllHandler(w http.ResponseWriter, r *http.Request) {
 
 	qs := r.URL.Query()
 
-	input.Q = app.readString(qs, "q", "")
+	input.Q = a.app.readString(qs, "q", "")
 
-	input.Filters.Page = app.readInt(qs, "page", 1, v)
-	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Filters.Page = a.app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.app.readInt(qs, "page_size", 20, v)
 
-	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.Sort = a.app.readString(qs, "sort", "id")
 	input.Filters.SortSafeList = []string{"id", "title", "date", "-id", "-title", "-date"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+		a.app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	movies, metadata, err := app.models.Apods.GetAll(input.Q, input.Filters)
+	movies, metadata, err := a.app.models.Apods.GetAll(input.Q, input.Filters)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, 0, envelope{"movies": movies, "metadata": metadata}, nil)
+	err = a.app.writeJSON(w, http.StatusOK, 0, envelope{"movies": movies, "metadata": metadata}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) getById(w http.ResponseWriter, r *http.Request) {
+func (a *apodApi) GetById(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Id int64
 	}
@@ -49,27 +63,27 @@ func (app *application) getById(w http.ResponseWriter, r *http.Request) {
 
 	qs := r.URL.Query()
 
-	input.Id = int64(app.readInt(qs, "id", 0, v))
+	input.Id = int64(a.app.readInt(qs, "id", 0, v))
 
-	apod, err := app.models.Apods.GetById(input.Id)
+	apod, err := a.app.models.Apods.GetById(input.Id)
 	if err != nil {
 		switch err {
 		case data.ErrRecordNotFound:
-			app.notFoundResponse(w, r)
+			a.app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, 0, envelope{"apod": apod}, nil)
+	err = a.app.writeJSON(w, http.StatusOK, 0, envelope{"apod": apod}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.app.serverErrorResponse(w, r, err)
 	}
 
 }
 
-func (app *application) GetByDate(w http.ResponseWriter, r *http.Request) {
+func (a *apodApi) GetByDate(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Date string
 	}
@@ -78,23 +92,23 @@ func (app *application) GetByDate(w http.ResponseWriter, r *http.Request) {
 
 	qs := r.URL.Query()
 
-	input.Date = app.readString(qs, "date", "")
+	input.Date = a.app.readString(qs, "date", "")
 
 	data.ValidateDate(v, input.Date)
 
-	apod, err := app.models.Apods.GetByDate(input.Date)
+	apod, err := a.app.models.Apods.GetByDate(input.Date)
 	if err != nil {
 		switch err {
 		case data.ErrRecordNotFound:
-			app.notFoundResponse(w, r)
+			a.app.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, 0, envelope{"apod": apod}, nil)
+	err = a.app.writeJSON(w, http.StatusOK, 0, envelope{"apod": apod}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.app.serverErrorResponse(w, r, err)
 	}
 }

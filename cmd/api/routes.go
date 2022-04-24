@@ -7,19 +7,19 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() http.Handler {
+func (app *application) routes(handlers *Handlers) http.Handler {
 	router := httprouter.New()
 
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
-	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthchekHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", handlers.HealthCheck.Check)
 
-	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/users/verify", app.verifyUserHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/users/login", app.loginUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/users", handlers.Users.Register)
+	router.HandlerFunc(http.MethodPost, "/v1/users/verify", handlers.Users.Verify)
+	router.HandlerFunc(http.MethodPost, "/v1/users/login", handlers.Users.Login)
 
-	router.HandlerFunc(http.MethodGet, "/v1/apods", app.getAllHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/apods", handlers.Apods.GetAll)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 

@@ -11,6 +11,7 @@ import (
 
 func TestUserRegistration(t *testing.T) {
 	app := newTestApplication()
+	handlers := NewHandler(app)
 	tests := []struct {
 		name         string
 		userName     string
@@ -61,7 +62,7 @@ func TestUserRegistration(t *testing.T) {
 			}
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(app.registerUserHandler)
+			handler := http.HandlerFunc(handlers.Users.Register)
 			handler.ServeHTTP(rr, req)
 
 			if status := rr.Code; status != tt.wantStatus {
@@ -83,6 +84,7 @@ func TestUserRegistration(t *testing.T) {
 func TestUserLogin(t *testing.T) {
 
 	app := newTestApplication()
+	handlers := NewHandler(app)
 
 	tests := []struct {
 		name         string
@@ -126,7 +128,7 @@ func TestUserLogin(t *testing.T) {
 			}
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(app.loginUserHandler)
+			handler := http.HandlerFunc(handlers.Users.Login)
 			handler.ServeHTTP(rr, req)
 
 			if status := rr.Code; status != tt.wantStatus {
@@ -147,6 +149,7 @@ func TestUserLogin(t *testing.T) {
 
 func TestUserVerify(t *testing.T) {
 	app := newTestApplication()
+	handlers := NewHandler(app)
 
 	tests := []struct {
 		name       string
@@ -190,10 +193,11 @@ func TestUserVerify(t *testing.T) {
 			}
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(app.verifyUserHandler)
+			handler := http.HandlerFunc(handlers.Users.Verify)
 			handler.ServeHTTP(rr, req)
 
 			if status := rr.Code; status != tt.wantStatus {
+				t.Errorf(rr.Body.String())
 				t.Errorf("handler returned wrong status code: got %v want %v",
 					status, tt.wantStatus)
 			}

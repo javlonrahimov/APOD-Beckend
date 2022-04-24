@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"javlonrahimov/apod/internal/data"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 func TestApodGetAll(t *testing.T) {
 	app := newTestApplication()
+	handlers := NewHandler(app)
 	tests := []struct{
 		name string
 		q string
@@ -18,10 +20,13 @@ func TestApodGetAll(t *testing.T) {
 		wantCode int
 	} {
 		{
-			name:       "",
+			name:       "Get all ok",
 			q:          "",
-			filtres:    data.Filters{},
-			wantStatus: 0,
+			filtres:    data.Filters{
+				Page: 1,
+				PageSize: 10,
+			},
+			wantStatus: http.StatusOK,
 			wantCode:   0,
 		},
 	}
@@ -35,11 +40,22 @@ func TestApodGetAll(t *testing.T) {
 			}
 			req.Header.Set("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(app.loginUserHandler)
+			handler := http.HandlerFunc(handlers.Apods.GetAll)
 			handler.ServeHTTP(rr, req)
 
-			
 
+			if status := rr.Code; status != tt.wantStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v",
+					status, tt.wantStatus)
+			}
+
+			var m map[string]int
+			json.Unmarshal(rr.Body.Bytes(), &m)
+
+			if m["code"] != tt.wantCode {
+				t.Errorf("handler returned unexpected body: got %v want %v",
+					m["code"], tt.wantCode)
+			}
 
 		})
 	}
