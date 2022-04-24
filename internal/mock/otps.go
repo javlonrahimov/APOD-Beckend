@@ -13,7 +13,7 @@ type otpModelMock struct{}
 
 func NewOtpsMock() data.OtpService {
 	otpModelMock := otpModelMock{}
-	otpModelMock.New(1, 15 * time.Minute)
+	otpModelMock.New(1, 15*time.Minute)
 	return &otpModelMock
 }
 

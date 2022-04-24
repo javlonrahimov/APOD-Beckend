@@ -1,15 +1,15 @@
 package main
 
 type Handlers struct {
-	Users UserHandler
+	Users       UserHandler
 	HealthCheck HealthchekHandler
-	Apods ApodHandler
+	Apods       ApodHandler
 }
 
 func NewHandler(app *application) *Handlers {
 	return &Handlers{
-		Users: NewUserApi(app),
+		Users:       NewUserApi(app),
 		HealthCheck: NewHealthcheckApi(app),
-		Apods: NewApodApi(app),
-	} 
+		Apods:       NewApodApi(app),
+	}
 }

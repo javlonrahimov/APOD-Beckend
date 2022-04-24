@@ -240,7 +240,6 @@ func (a *apodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, er
 	return apods, metadata, nil
 }
 
-
 func ValidateDate(v *validator.Validator, date string) {
 	v.Check(date != "", "date", "date must be provided")
 	v.Check(validator.Matches(date, validator.EmailRX), "date", "invalid date format")

@@ -22,4 +22,3 @@ func newTestApplication() *application {
 		wg:     sync.WaitGroup{},
 	}
 }
-

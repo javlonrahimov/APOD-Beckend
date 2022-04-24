@@ -17,7 +17,7 @@ type apodApi struct {
 }
 
 func NewApodApi(app *application) ApodHandler {
-	return &apodApi{app: app,}
+	return &apodApi{app: app}
 }
 
 func (a *apodApi) GetAll(w http.ResponseWriter, r *http.Request) {

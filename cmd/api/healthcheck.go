@@ -10,7 +10,7 @@ type healhcheckApi struct {
 	app *application
 }
 
-func NewHealthcheckApi(app *application) HealthchekHandler{
+func NewHealthcheckApi(app *application) HealthchekHandler {
 	return &healhcheckApi{app: app}
 }
 

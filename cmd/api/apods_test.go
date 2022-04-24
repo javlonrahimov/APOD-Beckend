@@ -12,18 +12,18 @@ import (
 func TestApodGetAll(t *testing.T) {
 	app := newTestApplication()
 	handlers := NewHandler(app)
-	tests := []struct{
-		name string
-		q string
-		filtres data.Filters
+	tests := []struct {
+		name       string
+		q          string
+		filtres    data.Filters
 		wantStatus int
-		wantCode int
-	} {
+		wantCode   int
+	}{
 		{
-			name:       "Get all ok",
-			q:          "",
-			filtres:    data.Filters{
-				Page: 1,
+			name: "Get all ok",
+			q:    "",
+			filtres: data.Filters{
+				Page:     1,
 				PageSize: 10,
 			},
 			wantStatus: http.StatusOK,
@@ -42,7 +42,6 @@ func TestApodGetAll(t *testing.T) {
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(handlers.Apods.GetAll)
 			handler.ServeHTTP(rr, req)
-
 
 			if status := rr.Code; status != tt.wantStatus {
 				t.Errorf("handler returned wrong status code: got %v want %v",
