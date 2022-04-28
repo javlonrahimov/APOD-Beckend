@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"javlonrahimov/apod/internal/data"
 	"javlonrahimov/apod/internal/validator"
 	"net/http"
@@ -65,7 +66,7 @@ func (a *apodApi) GetById(w http.ResponseWriter, r *http.Request) {
 
 	input.Id = int64(a.app.readInt(qs, "id", 0, v))
 
-	apod, err := a.app.models.Apods.GetById(input.Id)
+	apod, err := a.app.models.Apods.GetById(input.Id) // todo fetch user
 	if err != nil {
 		switch err {
 		case data.ErrRecordNotFound:

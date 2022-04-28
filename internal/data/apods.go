@@ -26,6 +26,8 @@ type Apod struct {
 	MediaType   string `json:"media_type"`
 	Url         string `json:"url"`
 	HdUrl       string `json:"hd_url"`
+	IsLiked     bool   `json:"is_liked"`
+	LikeCount   int    `json:"like_count"`
 	Version     int32  `json:"version"`
 }
 
