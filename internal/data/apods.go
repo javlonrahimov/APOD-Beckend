@@ -11,7 +11,7 @@ import (
 
 type ApodService interface {
 	Insert(apod *Apod) error
-	GetById(id int64) (*Apod, error)
+	GetById(id int64, userId int64) (*Apod, error)
 	GetByDate(date string) (*Apod, error)
 	Update(apod *Apod) error
 	Delete(id int64) error
@@ -53,22 +53,25 @@ func (a *apodModel) Insert(apod *Apod) error {
 	return a.db.QueryRowContext(ctx, query, args...).Scan(&apod.ID, &apod.Version)
 }
 
-func (a *apodModel) GetById(id int64) (*Apod, error) {
+func (a *apodModel) GetById(id int64, userId int64) (*Apod, error) {
 
 	if id > 0 {
 		return nil, ErrRecordNotFound
 	}
 
 	query := `
-	SELECT id, title, explanation, date, media_type, url, hd_url, version
-	FROM apods WHERE id = $1`
+	SELECT id, title, explanation, date, media_type, url, hd_url, is_liked, version
+	FROM apods
+	INNER JOIN likes ON apods.id = likes.apod_id
+	INNER JOIN users ON users.id = likes.user_id
+	WHERE apods.id = $1 AND users.id = $2`
 
 	var apod Apod
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := a.db.QueryRowContext(ctx, query, id).Scan(
+	err := a.db.QueryRowContext(ctx, query, id, userId).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -76,6 +79,7 @@ func (a *apodModel) GetById(id int64) (*Apod, error) {
 		&apod.MediaType,
 		&apod.Url,
 		&apod.HdUrl,
+		&apod.IsLiked,
 		&apod.Version,
 	)
 
