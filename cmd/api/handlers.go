@@ -4,6 +4,7 @@ type Handlers struct {
 	Users       UserHandler
 	HealthCheck HealthchekHandler
 	Apods       ApodHandler
+	Likes       LikeHandler
 }
 
 func NewHandler(app *application) *Handlers {
@@ -11,5 +12,6 @@ func NewHandler(app *application) *Handlers {
 		Users:       NewUserApi(app),
 		HealthCheck: NewHealthcheckApi(app),
 		Apods:       NewApodApi(app),
+		Likes:       NewLikeApi(app),
 	}
 }

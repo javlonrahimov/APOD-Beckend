@@ -15,7 +15,7 @@ type ApodService interface {
 	GetByDate(date string, userId int64) (*Apod, error)
 	Update(apod *Apod) error
 	Delete(id int64) error
-	GetAll(title string, filters Filters) ([]*Apod, Metadata, error)
+	GetAll(title string, filters Filters, userId int64) ([]*Apod, Metadata, error)
 }
 
 type Apod struct {
@@ -111,7 +111,7 @@ func (a *apodModel) GetById(id int64, userId int64) (*Apod, error) {
 	}
 
 	queryLikesCount := `
-	SELECT COUNT(id)
+	SELECT count(*)
 	FROM likes
 	WHERE apod_id = $1`
 
@@ -188,7 +188,7 @@ func (a *apodModel) GetByDate(date string, userId int64) (*Apod, error) {
 	}
 
 	queryLikesCount := `
-	SELECT COUNT(id)
+	SELECT count(*)
 	FROM likes
 	WHERE apod_id = $1`
 
@@ -271,7 +271,7 @@ func (m *apodModel) Delete(id int64) error {
 	return nil
 }
 
-func (a *apodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, error) {
+func (a *apodModel) GetAll(title string, filters Filters, userId int64) ([]*Apod, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
 		FROM movies
@@ -311,6 +311,45 @@ func (a *apodModel) GetAll(title string, filters Filters) ([]*Apod, Metadata, er
 
 		if err != nil {
 			return nil, Metadata{}, err
+		}
+
+		apod.IsLiked = true
+
+		queryIsLiked := `
+		SELECT *
+		FROM likes
+		WHERE user_id = $1 AND apod_id = $2`
+
+		ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		err = a.db.QueryRowContext(ctx, queryIsLiked, userId, apod.ID).Scan()
+
+		if err != nil {
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				apod.IsLiked = false
+			default:
+				return nil, Metadata{}, err
+			}
+		}
+
+		queryLikesCount := `
+		SELECT count(*)
+		FROM likes
+		WHERE apod_id = $1`
+
+		ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		err = a.db.QueryRowContext(ctx, queryLikesCount, apod.ID).Scan(&apod.LikeCount)
+		if err != nil {
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				apod.LikeCount = 0
+			default:
+				return nil, Metadata{}, nil
+			}
 		}
 
 		apods = append(apods, &apod)

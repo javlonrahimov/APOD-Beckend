@@ -20,6 +20,11 @@ func (app *application) routes(handlers *Handlers) http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/users/login", handlers.Users.Login)
 
 	router.HandlerFunc(http.MethodGet, "/v1/apods", handlers.Apods.GetAll)
+	router.HandlerFunc(http.MethodGet, "/v1/apod-by-id", handlers.Apods.GetById)
+	router.HandlerFunc(http.MethodGet, "/v1/apod-by-date", handlers.Apods.GetByDate)
+
+	router.HandlerFunc(http.MethodPost, "/v1/like", handlers.Likes.Like)
+	router.HandlerFunc(http.MethodPost, "/v1/revert-like", handlers.Likes.Revert)
 
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 

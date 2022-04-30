@@ -75,7 +75,7 @@ func (m *apodModelMock) Delete(id int64) error {
 	return data.ErrRecordNotFound
 }
 
-func (a *apodModelMock) GetAll(title string, filters data.Filters) ([]*data.Apod, data.Metadata, error) {
+func (a *apodModelMock) GetAll(title string, filters data.Filters, userId int64) ([]*data.Apod, data.Metadata, error) {
 
 	pagingApods := make([]*data.Apod, 0)
 

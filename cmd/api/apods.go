@@ -42,13 +42,20 @@ func (a *apodApi) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	movies, metadata, err := a.app.models.Apods.GetAll(input.Q, input.Filters)
+	user, err := a.app.contextGetUser(r)
+
+	if err != nil {
+		a.app.invalidAuthenticationTokenResponse(w, r)
+		return
+	}
+
+	apods, metadata, err := a.app.models.Apods.GetAll(input.Q, input.Filters, user.ID)
 	if err != nil {
 		a.app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = a.app.writeJSON(w, http.StatusOK, 0, envelope{"movies": movies, "metadata": metadata}, nil)
+	err = a.app.writeJSON(w, http.StatusOK, 0, envelope{"movies": apods, "metadata": metadata}, nil)
 	if err != nil {
 		a.app.serverErrorResponse(w, r, err)
 	}
