@@ -18,7 +18,7 @@ func (a *apodModelMock) Insert(apod *data.Apod) error {
 	return nil
 }
 
-func (a *apodModelMock) GetById(id int64) (*data.Apod, error) {
+func (a *apodModelMock) GetById(id int64, userId int64) (*data.Apod, error) {
 
 	if id > 0 {
 		return nil, data.ErrRecordNotFound
@@ -33,7 +33,7 @@ func (a *apodModelMock) GetById(id int64) (*data.Apod, error) {
 	return nil, data.ErrRecordNotFound
 }
 
-func (a *apodModelMock) GetByDate(date string) (*data.Apod, error) {
+func (a *apodModelMock) GetByDate(date string, userId int64) (*data.Apod, error) {
 
 	if date == "" {
 		return nil, data.ErrRecordNotFound

@@ -12,7 +12,7 @@ import (
 type ApodService interface {
 	Insert(apod *Apod) error
 	GetById(id int64, userId int64) (*Apod, error)
-	GetByDate(date string) (*Apod, error)
+	GetByDate(date string, userId int64) (*Apod, error)
 	Update(apod *Apod) error
 	Delete(id int64) error
 	GetAll(title string, filters Filters) ([]*Apod, Metadata, error)
@@ -60,18 +60,16 @@ func (a *apodModel) GetById(id int64, userId int64) (*Apod, error) {
 	}
 
 	query := `
-	SELECT id, title, explanation, date, media_type, url, hd_url, is_liked, version
+	SELECT id, title, explanation, date, media_type, url, hd_url, version
 	FROM apods
-	INNER JOIN likes ON apods.id = likes.apod_id
-	INNER JOIN users ON users.id = likes.user_id
-	WHERE apods.id = $1 AND users.id = $2`
+	WHERE apods.id = $1`
 
 	var apod Apod
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := a.db.QueryRowContext(ctx, query, id, userId).Scan(
+	err := a.db.QueryRowContext(ctx, query, id).Scan(
 		&apod.ID,
 		&apod.Title,
 		&apod.Explanation,
@@ -79,7 +77,6 @@ func (a *apodModel) GetById(id int64, userId int64) (*Apod, error) {
 		&apod.MediaType,
 		&apod.Url,
 		&apod.HdUrl,
-		&apod.IsLiked,
 		&apod.Version,
 	)
 
@@ -92,10 +89,49 @@ func (a *apodModel) GetById(id int64, userId int64) (*Apod, error) {
 		}
 	}
 
+	apod.IsLiked = true
+
+	queryIsLiked := `
+	SELECT *
+	FROM likes
+	WHERE user_id = $1 AND apod_id = $2`
+
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = a.db.QueryRowContext(ctx, queryIsLiked, userId, id).Scan()
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			apod.IsLiked = false
+		default:
+			return nil, err
+		}
+	}
+
+	queryLikesCount := `
+	SELECT COUNT(id)
+	FROM likes
+	WHERE apod_id = $1`
+
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = a.db.QueryRowContext(ctx, queryLikesCount, id).Scan(&apod.LikeCount)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			apod.LikeCount = 0
+		default:
+			return nil, err
+		}
+	}
+
 	return &apod, nil
 }
 
-func (a *apodModel) GetByDate(date string) (*Apod, error) {
+func (a *apodModel) GetByDate(date string, userId int64) (*Apod, error) {
 
 	if date == "" {
 		return nil, ErrRecordNotFound
@@ -125,6 +161,45 @@ func (a *apodModel) GetByDate(date string) (*Apod, error) {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	apod.IsLiked = true
+
+	queryIsLiked := `
+	SELECT *
+	FROM likes
+	WHERE user_id = $1 AND apod_id = $2`
+
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = a.db.QueryRowContext(ctx, queryIsLiked, userId, apod.ID).Scan()
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			apod.IsLiked = false
+		default:
+			return nil, err
+		}
+	}
+
+	queryLikesCount := `
+	SELECT COUNT(id)
+	FROM likes
+	WHERE apod_id = $1`
+
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = a.db.QueryRowContext(ctx, queryLikesCount, apod.ID).Scan(&apod.LikeCount)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			apod.LikeCount = 0
 		default:
 			return nil, err
 		}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"javlonrahimov/apod/internal/data"
 	"javlonrahimov/apod/internal/validator"
 	"net/http"
@@ -66,7 +65,14 @@ func (a *apodApi) GetById(w http.ResponseWriter, r *http.Request) {
 
 	input.Id = int64(a.app.readInt(qs, "id", 0, v))
 
-	apod, err := a.app.models.Apods.GetById(input.Id) // todo fetch user
+	user, err := a.app.contextGetUser(r)
+
+	if err != nil {
+		a.app.invalidAuthenticationTokenResponse(w, r)
+		return
+	}
+
+	apod, err := a.app.models.Apods.GetById(input.Id, user.ID) // todo fetch user
 	if err != nil {
 		switch err {
 		case data.ErrRecordNotFound:
@@ -97,7 +103,14 @@ func (a *apodApi) GetByDate(w http.ResponseWriter, r *http.Request) {
 
 	data.ValidateDate(v, input.Date)
 
-	apod, err := a.app.models.Apods.GetByDate(input.Date)
+	user, err := a.app.contextGetUser(r)
+
+	if err != nil {
+		a.app.invalidAuthenticationTokenResponse(w, r)
+		return
+	}
+
+	apod, err := a.app.models.Apods.GetByDate(input.Date, user.ID)
 	if err != nil {
 		switch err {
 		case data.ErrRecordNotFound:

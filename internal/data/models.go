@@ -17,6 +17,7 @@ type Models struct {
 	Permissions PermissonService
 	Otps        OtpService
 	Tokens      TokenService
+	Likes       LikesService
 }
 
 func NewModels(db *sql.DB) Models {
@@ -26,5 +27,6 @@ func NewModels(db *sql.DB) Models {
 		Permissions: NewPermissonModel(db),
 		Otps:        NewOtpModel(db),
 		Tokens:      NewTokenModel(db),
+		Likes:       NewLikeModel(db),
 	}
 }
