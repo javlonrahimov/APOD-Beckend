@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/pelletier/go-toml/query"
 )
 
 type LikesService interface {

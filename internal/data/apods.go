@@ -273,8 +273,8 @@ func (m *apodModel) Delete(id int64) error {
 
 func (a *apodModel) GetAll(title string, filters Filters, userId int64) ([]*Apod, Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
-		FROM movies
+		SELECT count(*) OVER(), id, title, explanation, media_type, date, url, hd_url, version
+		FROM apods
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		ORDER BY %s %s, id ASC
 		LIMIT $2 OFFSET $3`, filters.SortColumn(), filters.SortDirection())

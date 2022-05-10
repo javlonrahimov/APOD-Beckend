@@ -19,7 +19,7 @@ func (app *application) routes(handlers *Handlers) http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/users/verify", handlers.Users.Verify)
 	router.HandlerFunc(http.MethodPost, "/v1/users/login", handlers.Users.Login)
 
-	router.HandlerFunc(http.MethodGet, "/v1/apods", handlers.Apods.GetAll)
+	router.HandlerFunc(http.MethodGet, "/v1/apods", app.requireAuthenticatedUser(handlers.Apods.GetAll))
 	router.HandlerFunc(http.MethodGet, "/v1/apod-by-id", handlers.Apods.GetById)
 	router.HandlerFunc(http.MethodGet, "/v1/apod-by-date", handlers.Apods.GetByDate)
 
