@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"apod.api.javlonrahimov1212/internal/data"
+	"apod.api.javlonrahimov1212/internal/validator"
 )
 
 func (a *application) createApodHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,23 @@ func (a *application) createApodHandler(w http.ResponseWriter, r *http.Request) 
 	err := a.readJSON(w, r, &input)
 	if err != nil {
 		a.badRequestResposne(w, r, err)
+		return
+	}
+
+	apod := &data.Apod{
+		Date:        time.Time{},
+		Explanation: input.Explanation,
+		HdUrl:       input.HdUrl,
+		Url:         input.Url,
+		Title:       input.Title,
+		MediaType:   input.MediaType,
+		CreatedAt:   time.Time{},
+	}
+
+	v := validator.New()
+
+	if data.ValidateApod(v, apod); !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
