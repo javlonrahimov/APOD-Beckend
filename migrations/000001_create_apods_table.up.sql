@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS apods (
 	url text NOT NULL,
 	hd_url text NOT NULL,
 	media_type text NOT NULL,
-	created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+	created_at timestamp(0) with time zone NOT NULL DEFAULT NOW()
 );
