@@ -18,3 +18,4 @@ func NewModels(db *sql.DB) Models {
 		Apods: ApodModel{DB: db},
 	}
 }
+
