@@ -17,6 +17,8 @@ type Apod struct {
 	Title       string    `json:"title,ommitempty"`
 	MediaType   MediaType `json:"media_type"`
 	CreatedAt   time.Time `json:"-"`
+	UpdatedAt   time.Time `json:"-"`
+	Version     int       `json:"-"`
 }
 
 type ApodModel struct {
@@ -61,8 +63,8 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrRecordNotFound
-		default :
-			return nil,err
+		default:
+			return nil, err
 		}
 	}
 
@@ -70,7 +72,18 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 }
 
 func (a ApodModel) Update(apod *Apod) error {
-	return nil
+
+	query := `
+	UPDATE movies
+	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, version = version + 1, updeted_at = CURRENT_TIMESTAMP
+	WHERE id = $7
+	RETURNING version`
+
+	args := []interface{}{
+		apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.ID,
+	}
+
+	return a.DB.QueryRow(query, args...).Scan(&apod.Version)
 }
 
 func (a ApodModel) Delete(id int64) error {

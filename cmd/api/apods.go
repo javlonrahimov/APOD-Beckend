@@ -74,7 +74,7 @@ func (a *application) showApodHandler(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			a.notFoundResponse(w, r)
-		default :
+		default:
 			a.serverErrorResponse(w, r, err)
 		}
 	}
@@ -83,4 +83,64 @@ func (a *application) showApodHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
+}
+
+func (a *application) updateApodHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	apod, err := a.models.Apods.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	var input struct {
+		Date        time.Time      `json:"date"`
+		Explanation string         `json:"explanation"`
+		HdUrl       string         `json:"hd_url"`
+		Url         string         `json:"url"`
+		Title       string         `json:"title"`
+		MediaType   data.MediaType `json:"media_type"`
+	}
+
+	err = a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResposne(w, r, err)
+		return
+	}
+
+	apod.Date = input.Date
+	apod.Explanation = input.Explanation
+	apod.HdUrl = input.HdUrl
+	apod.Url = input.Url
+	apod.Title = input.Title
+	apod.MediaType = input.MediaType
+
+	v := validator.New()
+
+	if data.ValidateApod(v, apod); !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = a.models.Apods.Update(apod)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"apod": apod}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+
 }
