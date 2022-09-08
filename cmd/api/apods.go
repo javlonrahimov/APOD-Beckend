@@ -13,7 +13,7 @@ import (
 func (a *application) createApodHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title       string         `json:"title"`
-		Date        string         `json:date`
+		Date        string         `json:"date"`
 		Explanation string         `json:"explanation"`
 		HdUrl       string         `json:"hd_url"`
 		Url         string         `json:"url"`
@@ -77,6 +77,7 @@ func (a *application) showApodHandler(w http.ResponseWriter, r *http.Request) {
 		default:
 			a.serverErrorResponse(w, r, err)
 		}
+		return
 	}
 
 	err = a.writeJSON(w, http.StatusOK, envelope{"apod": apod}, nil)
@@ -104,12 +105,12 @@ func (a *application) updateApodHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var input struct {
-		Date        time.Time      `json:"date"`
-		Explanation string         `json:"explanation"`
-		HdUrl       string         `json:"hd_url"`
-		Url         string         `json:"url"`
-		Title       string         `json:"title"`
-		MediaType   data.MediaType `json:"media_type"`
+		Date        *time.Time      `json:"date"`
+		Explanation *string         `json:"explanation"`
+		HdUrl       *string         `json:"hd_url"`
+		Url         *string         `json:"url"`
+		Title       *string         `json:"title"`
+		MediaType   *data.MediaType `json:"media_type"`
 	}
 
 	err = a.readJSON(w, r, &input)
@@ -118,12 +119,29 @@ func (a *application) updateApodHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	apod.Date = input.Date
-	apod.Explanation = input.Explanation
-	apod.HdUrl = input.HdUrl
-	apod.Url = input.Url
-	apod.Title = input.Title
-	apod.MediaType = input.MediaType
+	if input.Date != nil {
+		apod.Date = *input.Date
+	}
+
+	if input.Explanation != nil {
+		apod.Explanation = *input.Explanation
+	}
+
+	if input.HdUrl != nil {
+		apod.HdUrl = *input.HdUrl
+	}
+
+	if input.Url != nil {
+		apod.Url = *input.Url
+	}
+
+	if input.Title != nil {
+		apod.Title = *input.Title
+	}
+
+	if input.MediaType != nil {
+		apod.MediaType = *input.MediaType
+	}
 
 	v := validator.New()
 
@@ -142,5 +160,28 @@ func (a *application) updateApodHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
+}
 
+func (a *application) deleteApodHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	err = a.models.Apods.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"message": "apod successfully deleted"}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
 }

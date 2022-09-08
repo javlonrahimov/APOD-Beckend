@@ -74,8 +74,8 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 func (a ApodModel) Update(apod *Apod) error {
 
 	query := `
-	UPDATE movies
-	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, version = version + 1, updeted_at = CURRENT_TIMESTAMP
+	UPDATE apods
+	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, version = version + 1, updated_at = CURRENT_TIMESTAMP
 	WHERE id = $7
 	RETURNING version`
 
@@ -87,6 +87,29 @@ func (a ApodModel) Update(apod *Apod) error {
 }
 
 func (a ApodModel) Delete(id int64) error {
+
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM apods
+		WHERE id = $1`
+
+	result, err := a.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
 	return nil
 }
 
