@@ -196,9 +196,7 @@ func (a *application) listApodsHandler(w http.ResponseWriter, r *http.Request) {
 		Title     string
 		Copyright string
 		Date      time.Time
-		Page      int
-		PageSize  int
-		Sort      string
+		data.Filters
 	}
 
 	v := validator.New()
@@ -210,10 +208,10 @@ func (a *application) listApodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	input.Date = a.readTime(qs, "date", "02.01.2006", time.Now(), v)
 
-	input.Page = a.readInt(qs, "page", 1, v)
-	input.PageSize = a.readInt(qs, "page_size", 20, v)
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
 
-	input.Sort = a.readString(qs, "sort", "id")
+	input.Filters.Sort = a.readString(qs, "sort", "id")
 
 	if !v.Valid() {
 		a.failedValidationResponse(w, r, v.Errors)
