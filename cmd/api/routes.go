@@ -19,6 +19,7 @@ func (a *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/apods/:id", a.showApodHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/apods/:id", a.updateApodHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/apods/:id", a.deleteApodHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/apods", a.listApodsHandler)
 
 	return router
 }

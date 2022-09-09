@@ -190,3 +190,35 @@ func (a *application) deleteApodHandler(w http.ResponseWriter, r *http.Request) 
 		a.serverErrorResponse(w, r, err)
 	}
 }
+
+func (a *application) listApodsHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title     string
+		Copyright string
+		Date      time.Time
+		Page      int
+		PageSize  int
+		Sort      string
+	}
+
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	input.Title = a.readString(qs, "title", "")
+	input.Copyright = a.readString(qs, "copyright", "")
+
+	input.Date = a.readTime(qs, "date", "02.01.2006", time.Now(), v)
+
+	input.Page = a.readInt(qs, "page", 1, v)
+	input.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	input.Sort = a.readString(qs, "sort", "id")
+
+	if !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
+}

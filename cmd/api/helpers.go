@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
+	"apod.api.javlonrahimov1212/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -87,4 +90,58 @@ func (a *application) readJSON(w http.ResponseWriter, r *http.Request, dst inter
 		}
 	}
 	return nil
+}
+
+func (a *application) readString(qs url.Values, key string, defaultValue string) string {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	return s
+}
+
+func (a *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+	csv := qs.Get(key)
+
+	if csv == "" {
+		return defaultValue
+	}
+
+	return strings.Split(csv, ",")
+}
+
+func (a *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+
+	return i
+}
+
+func (a *application) readTime(qs url.Values, key string, layout string, defaultValue time.Time, v *validator.Validator) time.Time {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	t, err := time.Parse(layout, s)
+	if err != nil {
+		a.logger.Print(err)
+		v.AddError(key, "must be valid date")
+		return defaultValue
+	}
+
+	return t
 }
