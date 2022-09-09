@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -33,7 +34,10 @@ func (a ApodModel) Insert(apod *Apod) error {
 
 	args := []interface{}{apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType}
 
-	return a.DB.QueryRow(query, args...).Scan(&apod.ID, &apod.CreatedAt)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.ID, &apod.CreatedAt)
 }
 
 func (a ApodModel) Get(id int64) (*Apod, error) {
@@ -48,7 +52,10 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 
 	var apod Apod
 
-	err := a.DB.QueryRow(query, id).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := a.DB.QueryRowContext(ctx, query, id).Scan(
 		&apod.ID,
 		&apod.CreatedAt,
 		&apod.Date,
@@ -76,14 +83,27 @@ func (a ApodModel) Update(apod *Apod) error {
 	query := `
 	UPDATE apods
 	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, version = version + 1, updated_at = CURRENT_TIMESTAMP
-	WHERE id = $7
+	WHERE id = $7 AND version = $8
 	RETURNING version`
 
 	args := []interface{}{
-		apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.ID,
+		apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.ID, apod.Version,
 	}
 
-	return a.DB.QueryRow(query, args...).Scan(&apod.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := a.DB.QueryRowContext(ctx, query, args...).Scan(&apod.Version)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
 }
 
 func (a ApodModel) Delete(id int64) error {
@@ -96,7 +116,10 @@ func (a ApodModel) Delete(id int64) error {
 		DELETE FROM apods
 		WHERE id = $1`
 
-	result, err := a.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result, err := a.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

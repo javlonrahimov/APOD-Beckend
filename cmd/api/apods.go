@@ -152,7 +152,12 @@ func (a *application) updateApodHandler(w http.ResponseWriter, r *http.Request) 
 
 	err = a.models.Apods.Update(apod)
 	if err != nil {
-		a.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			a.editConflictResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
