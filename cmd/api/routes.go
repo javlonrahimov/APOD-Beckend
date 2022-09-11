@@ -21,5 +21,7 @@ func (a *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/apods/:id", a.deleteApodHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/apods", a.listApodsHandler)
 
+	router.HandlerFunc(http.MethodPost, "/v1/users", a.registerUserHandler)
+
 	return a.recoverPanic(a.rateLimit(router))
 }

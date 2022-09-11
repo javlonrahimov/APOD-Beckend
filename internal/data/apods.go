@@ -48,7 +48,7 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 	}
 
 	query := `
-		SELECT id, created_at, date, explanation, hd_url, url, title, media_type, copyright
+		SELECT id, created_at, date, explanation, hd_url, url, title, media_type, copyright, version
 		FROM apods
 		WHERE id = $1`
 
@@ -67,6 +67,7 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 		&apod.Title,
 		&apod.MediaType,
 		&apod.Copyright,
+		&apod.Version,
 	)
 
 	if err != nil {
