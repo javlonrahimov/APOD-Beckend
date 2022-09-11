@@ -138,7 +138,6 @@ func (a *application) readTime(qs url.Values, key string, layout string, default
 
 	t, err := time.Parse(layout, s)
 	if err != nil {
-		a.logger.Print(err)
 		v.AddError(key, "must be valid date")
 		return defaultValue
 	}

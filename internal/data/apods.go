@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"apod.api.javlonrahimov1212/internal/validator"
@@ -17,6 +18,7 @@ type Apod struct {
 	Url         string    `json:"url,ommitempty"`
 	Title       string    `json:"title,ommitempty"`
 	MediaType   MediaType `json:"media_type"`
+	Copyright   string    `json:"copyright"`
 	CreatedAt   time.Time `json:"-"`
 	UpdatedAt   time.Time `json:"-"`
 	Version     int       `json:"-"`
@@ -28,11 +30,11 @@ type ApodModel struct {
 
 func (a ApodModel) Insert(apod *Apod) error {
 
-	query := `INSERT INTO apods (date, explanation, hd_url, url, title, media_type)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	query := `INSERT INTO apods (date, explanation, hd_url, url, title, media_type, copyright)
+	VALUES ($1, $2, $3, $4, $5, $6, &7)
 	RETURNING id, created_at`
 
-	args := []interface{}{apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType}
+	args := []interface{}{apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.Copyright}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -46,7 +48,7 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 	}
 
 	query := `
-		SELECT id, created_at, date, explanation, hd_url, url, title, media_type
+		SELECT id, created_at, date, explanation, hd_url, url, title, media_type, copyright
 		FROM apods
 		WHERE id = $1`
 
@@ -64,6 +66,7 @@ func (a ApodModel) Get(id int64) (*Apod, error) {
 		&apod.Url,
 		&apod.Title,
 		&apod.MediaType,
+		&apod.Copyright,
 	)
 
 	if err != nil {
@@ -82,12 +85,12 @@ func (a ApodModel) Update(apod *Apod) error {
 
 	query := `
 	UPDATE apods
-	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, version = version + 1, updated_at = CURRENT_TIMESTAMP
-	WHERE id = $7 AND version = $8
+	SET date = $1, explanation = $2, hd_url = $3, url = $4, title = $5, media_type = $6, copyright = &7, version = version + 1, updated_at = CURRENT_TIMESTAMP
+	WHERE id = $8 AND version = $9
 	RETURNING version`
 
 	args := []interface{}{
-		apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.ID, apod.Version,
+		apod.Date, apod.Explanation, apod.HdUrl, apod.Url, apod.Title, apod.MediaType, apod.Copyright, apod.ID, apod.Version,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -134,6 +137,65 @@ func (a ApodModel) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (a ApodModel) GetAll(title string, copyright string, date time.Time, filters Filters) ([]*Apod, Metadata, error) {
+
+	// todo do i really need full-text search like this
+	query := fmt.Sprintf(`
+	SELECT count(*) OVER(), id, created_at, date, explanation, hd_url, url, title, media_type, copyright
+	FROM apods
+	WHERE (to_tsvector('simple', title) @@  plainto_tsquery('simple', $1) OR $1 = '')
+	AND (to_tsvector('simple', copyright) @@  plainto_tsquery('simple', $2) OR $2 = '')
+	ORDER BY %s %s ,id ASC
+	LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{title, copyright, filters.limit(), filters.offset()}
+
+	rows, err := a.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	apods := []*Apod{}
+
+	for rows.Next() {
+
+		var apod Apod
+
+		err := rows.Scan(
+			&totalRecords,
+			&apod.ID,
+			&apod.CreatedAt,
+			&apod.Date,
+			&apod.Explanation,
+			&apod.HdUrl,
+			&apod.Url,
+			&apod.Title,
+			&apod.MediaType,
+			&apod.Copyright,
+		)
+
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		apods = append(apods, &apod)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return apods, metadata, nil
 }
 
 func ValidateApod(v *validator.Validator, apod *Apod) {

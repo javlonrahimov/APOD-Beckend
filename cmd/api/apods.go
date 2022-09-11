@@ -213,10 +213,21 @@ func (a *application) listApodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	input.Filters.Sort = a.readString(qs, "sort", "id")
 
-	if !v.Valid() {
+	input.Filters.SortSafeList = []string{"id", "title", "date", "-id", "-title", "-date"}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
 		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	apods, metadata, err := a.models.Apods.GetAll(input.Title, input.Copyright, input.Date, input.Filters)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"apods": apods, "metadata": metadata}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
 }
