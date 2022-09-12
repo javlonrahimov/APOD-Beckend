@@ -144,3 +144,14 @@ func (a *application) readTime(qs url.Values, key string, layout string, default
 
 	return t
 }
+
+func (a *application) background(fn func()) {
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				a.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+		fn()
+	}()
+}

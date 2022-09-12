@@ -8,11 +8,10 @@ import (
 	"apod.api.javlonrahimov1212/internal/validator"
 )
 
-
 func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name string `json:"name"`
-		Email string `json:"email"`
+		Name     string `json:"name"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -23,8 +22,8 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	user := &data.User{
-		Name: input.Name,
-		Email: input.Email,
+		Name:      input.Name,
+		Email:     input.Email,
 		Activated: false,
 	}
 
@@ -53,8 +52,15 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	a.background(func() {
+		err = a.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			a.logger.PrintError(err, nil)
+		}
+	})
+
 	err = a.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
-} 
+}
