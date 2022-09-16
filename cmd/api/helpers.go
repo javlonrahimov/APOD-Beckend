@@ -146,12 +146,19 @@ func (a *application) readTime(qs url.Values, key string, layout string, default
 }
 
 func (a *application) background(fn func()) {
+
+	a.wg.Add(1)
+
 	go func() {
+
+		defer a.wg.Done()
+
 		defer func() {
 			if err := recover(); err != nil {
 				a.logger.PrintError(fmt.Errorf("%s", err), nil)
 			}
 		}()
+
 		fn()
 	}()
 }
