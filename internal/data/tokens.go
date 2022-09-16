@@ -2,10 +2,8 @@ package data
 
 import (
 	"crypto/rand"
-	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base32"
-	"hash"
 	"time"
 )
 
