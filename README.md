@@ -1,11 +1,11 @@
 # APOD-Beckend
 ### Health-check
-| Mathod      | URL pattern | Action |
+| Method      | URL pattern | Action |
 | ----------- | ----------- | -------|
 | GET      | /v1/health-check | Show application information|
 
 ### Apods
-| Mathod      | URL pattern | Action |
+| Method      | URL pattern | Action |
 | ----------- | ----------- | -------|
 | POST   | /v1/apods | Create a new apod |
 | GET   | /v1/apods | Get list of apods |
@@ -14,6 +14,6 @@
 | DELETE | /v1/apods/:id| Delete specific apod |
 
 ### Users
-| Mathod      | URL pattern | Action |
+| Method      | URL pattern | Action |
 | ----------- | ----------- | -------|
 | POST | /v1/users | Register user |
