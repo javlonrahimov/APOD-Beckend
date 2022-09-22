@@ -36,7 +36,7 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 
 	v := validator.New()
 
-	if data.VAlidateUser(v, user); !v.Valid() {
+	if data.ValidateUser(v, user); !v.Valid() {
 		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -62,7 +62,7 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 	a.background(func() {
 
 		data := map[string]interface{}{
-			"activationToke": token.Plaintext,
+			"activationToken": token.Plaintext,
 			"userID":         user.ID,
 		}
 
@@ -73,6 +73,61 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 	})
 
 	err = a.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
+func (a *application) activatUserHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		TokenPlainText string `json:"token"`
+	}
+
+	err := a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResposne(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateTokenPlainText(v, input.TokenPlainText); !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	user, err := a.models.Users.GetForToken(data.ScopeActivation, input.TokenPlainText)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("token", "invalid or expired activation token")
+			a.failedValidationResponse(w, r, v.Errors)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	user.Activated = true
+
+	err = a.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			a.editConflictResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.models.Tokens.DeleteAllForUser(data.ScopeActivation, user.ID)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
