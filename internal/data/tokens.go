@@ -27,7 +27,7 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 
 	token := &Token{
 		UserID: userID,
-		Expiry: time.Time{},
+		Expiry: time.Now().Add(ttl),
 		Scope:  ScopeActivation,
 	}
 

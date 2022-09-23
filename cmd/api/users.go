@@ -63,7 +63,7 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 
 		data := map[string]interface{}{
 			"activationToken": token.Plaintext,
-			"userID":         user.ID,
+			"userID":          user.ID,
 		}
 
 		err = a.mailer.Send(user.Email, "user_welcome.tmpl", data)
@@ -79,6 +79,7 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (a *application) activatUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	var input struct {
 		TokenPlainText string `json:"token"`
 	}

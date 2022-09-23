@@ -17,3 +17,4 @@
 | Method      | URL pattern | Action |
 | ----------- | ----------- | -------|
 | POST | /v1/users | Register user |
+| PUT  | /v1/users/activated | Activate user |
