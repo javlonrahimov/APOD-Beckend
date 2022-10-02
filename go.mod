@@ -10,4 +10,7 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9
 )
 
-require gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+require (
+	github.com/felixge/httpsnoop v1.0.1 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+)
