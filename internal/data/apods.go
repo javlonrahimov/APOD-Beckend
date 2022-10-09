@@ -12,11 +12,11 @@ import (
 
 type Apod struct {
 	ID          int64     `json:"id"`
-	Date        time.Time `json:"date,ommitempty"`
-	Explanation string    `json:"explanation,ommitempty"`
-	HdUrl       string    `json:"hd_url,ommitempty"`
-	Url         string    `json:"url,ommitempty"`
-	Title       string    `json:"title,ommitempty"`
+	Date        time.Time `json:"date,omitempty"`
+	Explanation string    `json:"explanation,omitempty"`
+	HdUrl       string    `json:"hd_url,omitempty"`
+	Url         string    `json:"url,omitempty"`
+	Title       string    `json:"title,omitempty"`
 	MediaType   MediaType `json:"media_type"`
 	Copyright   string    `json:"copyright"`
 	CreatedAt   time.Time `json:"-"`
