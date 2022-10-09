@@ -102,15 +102,15 @@ func (a *application) readString(qs url.Values, key string, defaultValue string)
 	return s
 }
 
-func (a *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
-	csv := qs.Get(key)
+// func (a *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+// 	csv := qs.Get(key)
 
-	if csv == "" {
-		return defaultValue
-	}
+// 	if csv == "" {
+// 		return defaultValue
+// 	}
 
-	return strings.Split(csv, ",")
-}
+// 	return strings.Split(csv, ",")
+// }
 
 func (a *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
 
