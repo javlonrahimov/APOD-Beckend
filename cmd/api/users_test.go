@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestRegisterUser(t *testing.T){
+func TestRegisterUser(t *testing.T) {
 
 	// rr := httptest.NewRecorder()
 
@@ -14,6 +14,5 @@ func TestRegisterUser(t *testing.T){
 	// if err != nil {
 	// 	t.Fatal(err)
 	// }
-	
-	
+
 }
