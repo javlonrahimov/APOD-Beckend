@@ -1,11 +1,8 @@
 package domain
 
 import (
-	"errors"
 	"strconv"
 )
-
-var ErrInvaliMediaTypeFormat = errors.New("invalid media_type format")
 
 type MediaType int
 
@@ -13,6 +10,17 @@ const (
 	Image MediaType = iota
 	Video
 )
+
+func GetMediaType(data string) (MediaType, error) {
+	switch data {
+	case "image":
+		return Image, nil
+	case "video":
+		return Video, nil
+	default:
+		return -1, ErrInvaliMediaTypeFormat
+	}
+}
 
 func (mt MediaType) MarshalJSON() ([]byte, error) {
 
