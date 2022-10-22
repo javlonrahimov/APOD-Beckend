@@ -9,16 +9,17 @@ type MediaType int
 const (
 	Image MediaType = iota
 	Video
+	Unknown
 )
 
-func GetMediaType(data string) (MediaType, error) {
+func GetMediaType(data string) MediaType {
 	switch data {
 	case "image":
-		return Image, nil
+		return Image
 	case "video":
-		return Video, nil
+		return Video
 	default:
-		return -1, ErrInvaliMediaTypeFormat
+		return Unknown
 	}
 }
 
@@ -31,6 +32,8 @@ func (mt MediaType) MarshalJSON() ([]byte, error) {
 		jsonValue = "image"
 	case Video:
 		jsonValue = "video"
+	case Unknown:
+		jsonValue = "unknown"
 	}
 
 	return []byte(strconv.Quote(jsonValue)), nil
@@ -49,7 +52,7 @@ func (mt *MediaType) UnmarshalJSON(jsonValue []byte) error {
 	case "video":
 		*mt = Video
 	default:
-		return ErrInvaliMediaTypeFormat
+		*mt = Unknown
 	}
 	return nil
 }

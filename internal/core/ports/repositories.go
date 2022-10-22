@@ -11,7 +11,7 @@ type ApodRepository interface {
 	Get(id int64) (*domain.Apod, error)
 	Update(apod *domain.Apod) error
 	Delete(id int64) error
-	GetAll(title string, copyright string, date time.Time, filters domain.Filters) ([]*domain.Apod, domain.Metadata, error)
+	GetAll(title, copyright, date string, filters domain.Filters) ([]*domain.Apod, domain.Metadata, error)
 }
 
 type UserRepository interface {

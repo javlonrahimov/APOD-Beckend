@@ -1,19 +1,16 @@
 package ports
 
 import (
-	"time"
-
 	"apod.api.javlonrahimov1212/internal/core/domain"
-	"apod.api.javlonrahimov1212/internal/data"
 	"apod.api.javlonrahimov1212/internal/validator"
 )
 
 type ApodService interface {
-	Create(title, date, explanation, hdUrl, url, mediaType, copyright string, validator *validator.Validator) (*domain.Apod, error)
-	Get(id int64, validator *validator.Validator) (*domain.Apod, error)
-	Update(id, title, date, explanation, hdUrl, url, mediaType string, validator *validator.Validator) (*domain.Apod, error)
-	Delete(id int64, validator *validator.Validator) error
-	GetPaging(title, copyright string, date time.Time, filters data.Filters, validator *validator.Validator) ([]*domain.Apod, domain.Metadata, error)
+	Create(title, date, explanation, hdUrl, url, mediaType, copyright string) (*domain.Apod, *validator.Validator, error)
+	Get(id int64) (*domain.Apod, *validator.Validator, error)
+	Update(id int64, title, date, explanation, hdUrl, url, mediaType string) (*domain.Apod, *validator.Validator, error)
+	Delete(id int64) error
+	GetPaging(title, copyright, date string, filters domain.Filters, validator *validator.Validator) ([]*domain.Apod, domain.Metadata, error)
 }
 
 type UserService interface {
